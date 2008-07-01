@@ -13,10 +13,14 @@ module Braid
         end
       end
 
+      def system_result
+        $?.exitstatus
+      end
+
       def git_fetch(remote)
         # open4 messes with the pipes of index-pack
         system("git fetch -n #{remote} 2>&1 > /dev/null")
-        raise Braid::Commands::ShellExecutionError unless $? == 0
+        raise Braid::Commands::ShellExecutionError unless system_result == 0
         true
       end
 
@@ -97,9 +101,14 @@ module Braid
         invoke(:git_rev_parse, part)
       end
 
+      def system_result
+        $?.exitstatus
+      end
+
       def git_svn_fetch(remote)
         # open4 messes with the pipes of index-pack
         system("git svn fetch #{remote} 2>&1 > /dev/null")
+        raise Braid::Commands::ShellExecutionError unless system_result == 0
         true
       end
 

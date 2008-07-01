@@ -50,3 +50,54 @@ describe Braid::Operations::Helpers, "verify_version against 1.5.4.5" do
     end
   end
 end
+
+describe "Braid::Operations::Git#system_result" do
+  include Braid::Operations::Git
+
+  it 'should return status ok' do
+    system( 'true' )
+    system_result.should == 0
+  end
+
+  it 'should return error codes' do
+    system( 'false' )
+    system_result.should == 1
+  end
+end
+
+
+describe "Braid::Operations::Git#git_fetch" do
+  include Braid::Operations::Git
+
+  it "should run git" do
+    self.stub!( :system_result ).and_return( 0 )
+    self.should_receive( :system ).with( 'git fetch -n test_remote 2>&1 > /dev/null' )
+    git_fetch( 'test_remote' ).should == true
+  end
+
+  it "should raise on error git failed" do
+    self.stub!( :system_result ).and_return( 1 )
+    self.should_receive( :system ).with( 'git fetch -n invalid_remote 2>&1 > /dev/null' )
+    lambda {
+      git_fetch( 'invalid_remote' )
+    }.should raise_error( Braid::Commands::ShellExecutionError )
+  end
+end
+
+describe "Braid::Operations::Svn#git_svn_fetch" do
+  include Braid::Operations::Svn
+
+  it "should run git-svn" do
+    self.stub!( :system_result ).and_return( 0 )
+    self.should_receive( :system ).with( 'git svn fetch test_remote 2>&1 > /dev/null' )
+    git_svn_fetch( 'test_remote' ).should == true
+  end
+
+  it "should raise on error git failed" do
+    self.stub!( :system_result ).and_return( 1 )
+    self.should_receive( :system ).with( 'git svn fetch invalid_remote 2>&1 > /dev/null' )
+    lambda {
+      git_svn_fetch( 'invalid_remote' )
+    }.should raise_error( Braid::Commands::ShellExecutionError )
+  end
+end
