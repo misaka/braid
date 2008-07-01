@@ -78,6 +78,11 @@ module Braid
         true
       end
 
+      def git_change_remote( local_branch, url )
+        exec!( "git config 'svn-remote.#{local_branch}.url' '#{url}'" )
+        true
+      end
+
       def local_changes?
         status, out, err = exec("git status")
         out.split("\n").grep(/nothing to commit \(working directory clean\)/).empty?
@@ -265,9 +270,32 @@ module Braid
         end
       end
 
-      def find_remote(remote)
+      def find_remote(remote_name)
         # TODO clean up and maybe return more information
-        !!File.readlines(".git/config").find { |line| line =~ /^\[(svn-)?remote "#{remote}"\]/ }
+        git_config = get_git_config
+        return git_config['svn-remote'][remote_name]
+#         !!File.readlines(".git/config").find { |line| line =~ /^\[(svn-)?remote "#{remote}"\]/ }
+      end
+
+      def get_git_config
+        ( status, output, error ) = exec("git config --list")
+        raise Braid::Commands::ShellExecutionError unless status == 0
+
+        config = {}
+        output.each do |line|
+          line.chomp!
+          ( flat_path, value ) = line.split( '=', 2 )
+          path = flat_path.split( '.' )
+          section_list = path[0,path.length-1]
+          key = path[-1]
+          section_hash = section_list.inject( config ) do | config_branch, section_name |
+            config_branch[section_name] ||= {}
+            config_branch[section_name]
+          end
+          section_hash[key] = value
+        end
+
+        return config
       end
     end
 

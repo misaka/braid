@@ -101,3 +101,29 @@ describe "Braid::Operations::Svn#git_svn_fetch" do
     }.should raise_error( Braid::Commands::ShellExecutionError )
   end
 end
+
+describe "Braid::Operations::Mirror#git_config" do
+  include Braid::Operations::Mirror
+
+  it "should parse 'git config' output and create a hash" do
+    test_config = <<EOF
+color.ui=true
+alias.ci=commit
+alias.co=checkout
+alias.br=branch
+alias.st=status
+svn-remote.braid/svn/vendor/rails.url=svn+ssh://svn.migapps.com/opt/svn/RubyOnRailsApps/common/vendor/rails_1_2_1
+svn-remote.braid/svn/vendor/rails.fetch=:refs/remotes/braid/svn/vendor/rails
+EOF
+    self.should_receive( :exec ).with( 'git config --list' ).
+      and_return( [ 0, test_config, '' ] )
+    config_struct = git_config
+    config_struct['color']['ui'].should == 'true'
+    config_struct['alias']['co'].should == 'checkout'
+    config_struct['svn-remote']['braid/svn/vendor/rails']['url'].
+      should == 'svn+ssh://svn.migapps.com/opt/svn/RubyOnRailsApps/common/vendor/rails_1_2_1'
+    config_struct['svn-remote']['braid/svn/vendor/rails']['fetch'].
+      should == 'svn-remote.braid/svn/vendor/rails.fetch=:refs/remotes/braid/svn/vendor/rails'
+  end
+end
+

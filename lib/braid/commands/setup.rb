@@ -20,17 +20,22 @@ module Braid
             return
           end
 
-          if find_remote(params["local_branch"])
-            msg "Mirror '#{mirror}/' already has a remote. Skipping."
-            return
-          end
-
-          msg "Setting up remote for '#{mirror}/'."
-          case params["type"]
-          when "git"
-            invoke(:git_remote_add, params["local_branch"], params["remote"], params["branch"])
-          when "svn"
-            invoke(:git_svn_init, params["local_branch"], params["remote"])
+          remote = find_remote(params["local_branch"])
+          if remote
+            if remote['url'] == params['remote']
+              msg "Mirror '#{mirror}/' already has a remote. Skipping."
+            else
+              msg "Changing remote for '#{mirror}/'."
+              invoke( :git_change_remote, params['local_branch'], params['remote'] )
+            end
+          else
+            msg "Setting up remote for '#{mirror}/'."
+            case params["type"]
+            when "git"
+              invoke(:git_remote_add, params["local_branch"], params["remote"], params["branch"])
+            when "svn"
+              invoke(:git_svn_init, params["local_branch"], params["remote"])
+            end
           end
         end
     end
